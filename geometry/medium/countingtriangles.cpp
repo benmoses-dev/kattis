@@ -1,7 +1,5 @@
-#include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <set>
 #include <vector>
 
 using namespace std;
@@ -15,6 +13,18 @@ bool equal(double a, double b) { return fabs(a - b) < EPSILON; }
 
 struct Point {
   double x, y;
+
+  bool operator<(const Point &other) const {
+    if (!equal(x, other.x))
+      return x < other.x;
+    return y < other.y - EPSILON;
+  }
+
+  bool operator==(const Point &other) const {
+    return equal(other.x, x) && equal(other.y, y);
+  }
+
+  bool operator!=(const Point &other) const { return !(*this == other); }
 };
 
 // Vector between two points
@@ -58,7 +68,9 @@ bool intersects(Point start1, Point end1, Point start2, Point end2,
 
   // t is the intersection point along r, so just use the parametric for t to
   // find how far along it is
-  intersection = {start1.x + t * r.x, start1.y + t * r.y};
+  double distanceX = t * r.x;
+  double distanceY = t * r.y;
+  intersection = {start1.x + distanceX, start1.y + distanceY};
   return true;
 }
 
@@ -87,78 +99,32 @@ int main() {
       segments[i] = segment;
     }
 
-    vector<Point> intersections;
-    vector<vector<int>> adjacencyList;
-    for (int i = 0; i < n; i++) {
-      for (int j = i + 1; j < n; j++) {
-        Point intersection;
-        if (intersects(segments[i].start, segments[i].end, segments[j].start,
-                       segments[j].end, intersection)) {
-          intersections.push_back(intersection);
+    int triangleCount = 0;
+
+    // Brute-force all triples of segments
+    for (int i = 0; i < n; ++i) {
+      for (int j = i + 1; j < n; ++j) {
+        for (int k = j + 1; k < n; ++k) {
+          Point ab, bc, ac;
+
+          // Check that all three pairs intersect pair-wise
+          if (!intersects(segments[i].start, segments[i].end, segments[j].start,
+                          segments[j].end, ab))
+            continue;
+          if (!intersects(segments[j].start, segments[j].end, segments[k].start,
+                          segments[k].end, bc))
+            continue;
+          if (!intersects(segments[i].start, segments[i].end, segments[k].start,
+                          segments[k].end, ac))
+            continue;
+
+          triangleCount++;
         }
       }
     }
 
-    adjacencyList.resize(intersections.size());
-    // Iterate through each segment line and update the adjacency list using all
-    // intersections along the line
-    for (int i = 0; i < segments.size(); i++) {
-      Segment segment = segments[i];
-
-      vector<pair<double, int>> pointsAlongSegment;
-
-      Point u = segment.start;
-      Point v = segment.end;
-      Point r = v - u;
-
-      for (int j = 0; j < intersections.size(); j++) {
-        Point intersection = intersections[j];
-
-        // P = start1 + (t * r)
-        // t = (start1 - P(t)) / r
-        double t;
-        if (r.x > r.y) {
-          t = (u.x - intersection.x) / r.x;
-        } else {
-          t = (u.y - intersection.y) / r.y;
-        }
-        if (t < 0 - EPSILON || t > 1 + EPSILON)
-          continue;
-
-        pointsAlongSegment.push_back({t, j});
-      }
-
-      sort(pointsAlongSegment.begin(), pointsAlongSegment.end());
-      int first = pointsAlongSegment[0].second;
-      for (const auto &point : pointsAlongSegment) {
-        if (point.second == pointsAlongSegment[0].second)
-          continue;
-        int second = point.second;
-        adjacencyList[first].push_back(second);
-        adjacencyList[second].push_back(first);
-        first = second;
-      }
-    }
-
-    set<tuple<int, int, int>> triangles;
-    for (int u = 0; u < adjacencyList.size(); u++) {
-      vector<int> uList = adjacencyList[u];
-      for (int v = 0; v < uList.size(); v++) {
-        vector<int> vList = adjacencyList[uList[v]];
-        for (int w = 0; w < vList.size(); w++) {
-          vector<int> wList = adjacencyList[vList[w]];
-          for (const int &last : wList) {
-            if (last == u) {
-              vector<int> tri = {u, v, w};
-              sort(tri.begin(), tri.end());
-              // Prevent duplicates if the triangles are walked in a different
-              // order
-              triangles.insert({tri[0], tri[1], tri[2]});
-              break;
-            }
-          }
-        }
-      }
-    }
+    cout << triangleCount << "\n";
   }
+
+  return 0;
 }
