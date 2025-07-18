@@ -4,8 +4,16 @@
 
 using namespace std;
 
-// EEA to find gcd and Bezout coefficients
-// gcd(a, b) = gcd(b, a % b)
+/**
+ * Helper function for normalising inputs mod m.
+ * This ensures that inputs are not negative or too large.
+ */
+long long normalise(long long x, long long m) { return (x % m + m) % m; }
+
+/**
+ * EEA to find gcd and Bezout coefficients.
+ * gcd(a, b) = gcd(b, a % b)
+ */
 long long extendedGCD(long long a, long long b, long long &x, long long &y) {
   if (b == 0) {
     // gcd(a,0) = a
@@ -30,75 +38,83 @@ long long extendedGCD(long long a, long long b, long long &x, long long &y) {
   // Therefore:
   x = y1;
   y = x1 - (a / b) * y1;
-
   return gcd;
 }
 
-long long modInvEEA(long long b, long long m) {
-  b = (b % m + m) % m;
-  // Find x, y where (b * x) - (m * y) = gcd(b, m)
-  long long x, y;
-  long long gcd = extendedGCD(b, m, x, y);
-
-  if (gcd != 1)
-    return -1; // Inverse doesn't exist if base and modulus are not coprime
-
-  // Handle negative x
-  return (x % m + m) % m;
+/**
+ * Helper function to ensure the modulus is greater than 1.
+ */
+void checkMod(long long m) {
+  if (m <= 1)
+    throw invalid_argument("Modulus must be greater than 1");
 }
 
+/**
+ * Use if m is not prime but is coprime with b.
+ * Do not call directly, use modInv wrapper function.
+ */
+long long modInvEEA(long long b, long long m) {
+  long long x, y; // Find x, y where (b * x) - (m * y) = gcd(b, m)
+  long long gcd = extendedGCD(b, m, x, y);
+  return (x % m + m) % m; // Handle negative x
+}
+
+/**
+ * Fast binary exponentiation using modular arithmetic
+ */
 long long modPow(long long b, long long exp, long long m) {
-  if (m <= 1) {
-    throw invalid_argument("Modulus must be greater than 1");
-  }
-  b = (b % m + m) % m; // Normalise for negative values and take modulus m
+  checkMod(m);
+  b = normalise(b, m);
   long long r = 1;
   while (exp > 0) {
-    if (exp & 1) // If odd, just multiply by the base
+    if (exp & 1) { // If odd, just multiply by the base
       r = (r * b) % m;
-    // Otherwise, square the base and halve the exponent
-    b = (b * b) % m;
+    }
+    b = (b * b) % m; // Otherwise, square the base and halve the exponent
     exp >>= 1;
   }
   return r;
 }
 
-long long modInvFermat(long long b, long long m) { // m must be prime
-  b = (b % m + m) % m; // Normalise for negative values and take modulus m
-  if (gcd(b, m) != 1)
-    return -1;
+/**
+ * Use if m is prime.
+ * Do not call directly, use modInv wrapper function.
+ */
+long long modInvFermat(long long b, long long m) {
   long long exp = m - 2; // b^-1 is modular congruent with b^m-2 mod m
   return modPow(b, exp, m);
 }
 
+/**
+ * This is a wrapper around Fermat's Little Theorem and the Extended Euclidean
+ * Algorithm. Ensure that m is coprime with b. If m is prime, it will use
+ * Fermat's, otherwise it will use EEA.
+ */
 long long modInv(long long b, long long m, bool isPrime = false) {
-  if (m <= 1) {
-    throw invalid_argument("Modulus must be greater than 1");
-  }
+  checkMod(m);
+  // Inverse doesn't exist if base and modulus are not coprime
+  if (gcd(b, m) != 1)
+    throw invalid_argument("modInv: b and m are not coprime!");
+  b = normalise(b, m);
   if (isPrime)
     return modInvFermat(b, m);
   return modInvEEA(b, m);
 }
 
+/**
+ * Easy if m is prime, otherwise ensure that it is coprime with b.
+ */
 long long modDivide(long long a, long long b, long long m,
                     bool isPrime = false) {
-  if (m <= 1) {
-    throw invalid_argument("Modulus must be greater than 1");
-  }
-  a = (a % m + m) % m;
   long long invB = modInv(b, m, isPrime);
-  if (invB == -1) {
-    throw invalid_argument("Invalid Division");
-  }
-  return (a * invB) % m;
+  a = normalise(a, m);
+  return (a * invB) % m; // Multiply by the inverse
 }
 
 long long modAdd(long long a, long long b, long long m) {
-  if (m <= 1) {
-    throw invalid_argument("Modulus must be greater than 1");
-  }
-  a = (a % m + m) % m;
-  b = (b % m + m) % m;
+  checkMod(m);
+  a = normalise(a, m);
+  b = normalise(b, m);
   long long res = a + b;
   if (res >= m)
     res -= m;
@@ -106,39 +122,42 @@ long long modAdd(long long a, long long b, long long m) {
 }
 
 long long modSub(long long a, long long b, long long m) {
-  if (m <= 1) {
-    throw invalid_argument("Modulus must be greater than 1");
-  }
-  a = (a % m + m) % m;
-  b = (b % m + m) % m;
+  checkMod(m);
+  a = normalise(a, m);
+  b = normalise(b, m);
   long long res = a - b;
   if (res < 0)
     res += m;
   return res;
 }
 
+/**
+ * This could overflow, consider using uint_128.
+ */
 long long modMul(long long a, long long b, long long m) {
-  if (m <= 1) {
-    throw invalid_argument("Modulus must be greater than 1");
-  }
-  a = (a % m + m) % m;
-  b = (b % m + m) % m;
+  checkMod(m);
+  a = normalise(a, m);
+  b = normalise(b, m);
   return (a * b) % m;
 }
 
+/**
+ * Handy struct to precalculate modular factorials and their inverses.
+ * Calculates all factorials and their inverses mod m up to n.
+ * Also supports constant time nCr calculations.
+ */
 struct ModFact {
   vector<long long> fact, invFact;
   long long mod;
 
   ModFact(int n, long long m) : fact(n + 1), invFact(n + 1), mod(m) {
-    if (m <= 1) {
-      throw invalid_argument("Modulus must be greater than 1");
-    }
+    checkMod(m);
     fact[0] = 1;
     for (int i = 1; i <= n; i++) {
       fact[i] = (fact[i - 1] * i) % mod;
     }
-    invFact[n] = modInv(fact[n], mod, true); // If mod is prime
+    // If mod is prime, otherwise ensure coprime and pass false
+    invFact[n] = modInv(fact[n], mod, true);
     for (int i = (n - 1); i >= 0; i--) {
       invFact[i] = (invFact[i + 1] * (i + 1)) % mod;
     }
@@ -151,10 +170,8 @@ struct ModFact {
   }
 };
 
-vector<long long> modInverseAll(int n, long long m) { // m must be prime here
-  if (m <= 1) {
-    throw invalid_argument("Modulus must be greater than 1");
-  }
+vector<long long> modInverseAll(int n, long long m) {
+  checkMod(m);
   vector<long long> inv(n + 1, 1);
   for (int i = 2; i <= n; i++) {
     inv[i] = m - (m / i) * inv[m % i] % m;
@@ -163,9 +180,7 @@ vector<long long> modInverseAll(int n, long long m) { // m must be prime here
 }
 
 long long modCombination(long long n, long long r, long long m) {
-  if (m <= 1) {
-    throw invalid_argument("Modulus must be greater than 1");
-  }
+  checkMod(m);
   if (r > n)
     return 0;
   long long numerator = 1, denominator = 1;
@@ -174,5 +189,5 @@ long long modCombination(long long n, long long r, long long m) {
     denominator = (denominator * i) % m;
   }
   return modDivide(numerator, denominator, m,
-                   true); // If m prime, otherwise set false
+                   true); // If m prime, otherwise set false and ensure coprime
 }
