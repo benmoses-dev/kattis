@@ -1,3 +1,7 @@
+#include <stdexcept>
+
+using namespace std;
+
 // EEA to find gcd and Bezout coefficients
 // gcd(a, b) = gcd(b, a % b)
 long long extendedGCD(long long a, long long b, long long &x, long long &y) {
@@ -28,8 +32,8 @@ long long extendedGCD(long long a, long long b, long long &x, long long &y) {
   return gcd;
 }
 
-long long modInverse(long long b, long long m) {
-  // Find x where (a * x) - (b * y) = gcd(a, b)
+long long modInv(long long b, long long m) {
+  // Find x, y where (b * x) - (m * y) = gcd(b, m)
   long long x, y;
   long long gcd = extendedGCD(b, m, x, y);
 
@@ -39,4 +43,25 @@ long long modInverse(long long b, long long m) {
 
   // Handle negative x
   return (x % m + m) % m;
+}
+
+long long modFermat(long long b, long long m) {
+    long long result = 1;
+    long long exponent = m - 2;
+    b %= m;
+    while (exponent > 0) {
+        if (exponent & 1) result = (result * b) % m;
+        b = (b * b) % m;
+        exponent = exponent >> 1;
+    }
+    return result;
+}
+
+long long modDivide(long long a, long long b, long long m) {
+    a %= m;
+    long long invB = modInv(b, m);
+    if (invB == -1) {
+        throw invalid_argument('Invalid Division');
+    }
+    return (a * invB) % m;
 }
