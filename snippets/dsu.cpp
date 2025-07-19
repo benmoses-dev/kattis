@@ -10,7 +10,7 @@ struct DSU {
     vector<long long> sums;
     int numComponents;
 
-    DSU(const vector<int>& values) {
+    DSU(const vector<int> &values) {
         int n = values.size();
         parents.resize(n);
         iota(parents.begin(), parents.end(), 0);
@@ -25,14 +25,16 @@ struct DSU {
     }
 
     int find(int x) {
-        if (parents[x] != x) parents[x] = find(parents[x]);
+        if (parents[x] != x)
+            parents[x] = find(parents[x]);
         return parents[x];
     }
 
     void unite(int a, int b) {
         int rootA = find(a);
         int rootB = find(b);
-        if (rootA == rootB) return;
+        if (rootA == rootB)
+            return;
         if (size[rootA] < size[rootB]) {
             swap(rootA, rootB);
         }
@@ -44,20 +46,11 @@ struct DSU {
         numComponents--;
     }
 
-    int getSize(int i) {
-        return size[find(i)];
-    }
+    int getSize(int i) { return size[find(i)]; }
 
-    int getMaxVal(int i) {
-        return maxVal[find(i)];
-    }
+    int getMaxVal(int i) { return maxVal[find(i)]; }
 
-    long long getSum(int i) {
-        return sums[find(i)];
-    }
+    long long getSum(int i) { return sums[find(i)]; }
 
-    int getComponents() {
-        return numComponents;
-    }
+    int getComponents() { return numComponents; }
 };
-
