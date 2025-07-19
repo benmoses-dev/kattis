@@ -9,7 +9,6 @@ using namespace std;
  */
 bool undirectedBfs(vector<vector<int>> &adj) {
     int n = adj.size();
-    int start = 0;
 
     // Track state
     bool hasCycle = false;
@@ -22,7 +21,11 @@ bool undirectedBfs(vector<vector<int>> &adj) {
     int componentId = 0;
     vector<int> components(n, -1);
 
-    for (int i = start; i < n; i++) {
+    /**
+     * Remove the loop and pass in an index to only carry out a BFS from one starting node
+     * instead of all nodes.
+     */
+    for (int i = 0; i < n; i++) {
         if (colours[i] != -1)
             continue;
 
