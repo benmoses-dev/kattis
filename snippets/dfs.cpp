@@ -40,7 +40,6 @@ void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &re
     res.parent[u] = p;
     res.components[u] = currentComponent; // Flood fill all nodes in the same DFS.
 
-    // Detect bridges and articulation points
     res.entry[u] = res.low[u] = timer++;
     int children = 0;
     bool isArticulation = false;
@@ -51,21 +50,35 @@ void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &re
 
         if (visited[v] == 0) {
             undirectedDfs(adj, visited, res, v, u);
+            // v has now been processed (and is a descendant) - use its low-link value.
             res.low[u] = min(res.low[u], res.low[v]);
 
+            /**
+             * If v cannot get back up to u (or above) via another path, this is a bridge.
+             * Remove this edge disconnects the graph.
+             */
             if (res.low[v] > res.entry[u]) {
                 res.bridges.emplace_back(u, v);
             }
 
+            /**
+             * If v cannot get back above u, this is an articulation point (even if it
+             * can get back to u). Removing this node disconnects the graph.
+             */
             if (res.low[v] >= res.entry[u] && p != -1) {
                 isArticulation = true;
             }
 
             children++;
         } else {
+            /**
+             * v is being processed (we are still recursing, so it doesn't have a low-link
+             * value yet).
+             * Use its entry time as the low-link for everything on this route.
+             */
             res.low[u] = min(res.low[u], res.entry[v]);
 
-            if (visited[v] == 1 && v != p) {
+            if (v != p) {
                 // Back edge => cycle
                 res.hasCycle = true;
             }
@@ -95,7 +108,7 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
     visited[u] = 1;
 
     res.parent[u] = p;
-    res.components[u] = currentComponent; // Flood fill all nodes in the same DFS.
+    res.components[u] = currentComponent; // Track weakly connected components.
 
     // Detect bridges and articulation points
     res.entry[u] = res.low[u] = timer++;
@@ -105,26 +118,27 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
 
     for (int v : adj[u]) {
         if (visited[v] == 0) {
+            // Recurse and then update the low-link.
             directedDfs(adj, visited, res, v, u);
             res.low[u] = min(res.low[u], res.low[v]);
-        } else if (res.onStack[v]) {
+        } else if (res.onStack[v]) { // Currently being processed.
             res.low[u] = min(res.low[u], res.entry[v]);
             // Back edge => cycle
             res.hasCycle = true;
         }
-        // It's a forward/cross edge
+        // Otherwise, it's a forward/cross edge
     }
 
     if (res.low[u] == res.entry[u]) {
-        // Root of SCC
+        // Root of SCC - process all strongly connected components in this group.
         vector<int> components;
         while (!res.sccStack.empty()) {
             int v = res.sccStack.top();
             res.sccStack.pop();
             res.onStack[v] = false;
             components.push_back(v);
-            res.sccIndex[v] = currSCC;
-            if (v == u)
+            res.sccIndex[v] = currSCC; // Track strongly connected component IDs.
+            if (v == u)                // We have reached the root.
                 break;
         }
         res.sccs.push_back(components);
@@ -135,6 +149,9 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
     res.postOrder.push_back(u);
 }
 
+/**
+ * DFS driver function. Pass isDirected depending on whether the graph is directed or not.
+ */
 DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
     int n = adj.size();
 
@@ -165,13 +182,18 @@ DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
         }
     }
 
+    // If the graph is a DAG, we can get the topological order.
     if (isDirected && !res.hasCycle) {
         res.topoOrder = res.postOrder;
         reverse(res.topoOrder.begin(), res.topoOrder.end());
     }
+
     return res;
 }
 
+/**
+ * Re-construct the recursion path using the parent vector.
+ */
 vector<int> getPath(int u, DFSResult &res) {
     vector<int> path;
     while (u != -1) {
@@ -182,6 +204,9 @@ vector<int> getPath(int u, DFSResult &res) {
     return path;
 }
 
+/**
+ * Is u an ancestor of v?
+ */
 bool isAncestor(int u, int v, const DFSResult &res) {
     return (res.entry[u] <= res.entry[v]) && (res.exit[v] <= res.exit[u]);
 }
