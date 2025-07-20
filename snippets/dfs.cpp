@@ -6,6 +6,7 @@ using namespace std;
 
 int timer;
 int currentComponent;
+int currSCC;
 
 /**
  * Store the results of the DFS.
@@ -22,6 +23,7 @@ struct DFSResult {
     vector<int> articulationPoints; // Critical nodes in an undirected graph.
     vector<pair<int, int>> bridges; // Critical edges in an undirected graph.
     vector<vector<int>> sccs;       // Strongly-connected components in a directed graph.
+    stack<int> sccStack;            // Track current component stack.
     vector<bool> onStack;           // Tarjan's SCC algorithm.
     vector<int> sccIndex;           // Component ID for each node in Tarjan's.
 };
@@ -83,7 +85,7 @@ void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &re
 }
 
 void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res, int u,
-                 stack<int> &sccStack, int &currSCC, int p = -1) {
+                 int p = -1) {
     /**
      * 0 = not visited
      * 1 = visiting
@@ -97,12 +99,12 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
     // Detect bridges and articulation points
     res.entry[u] = res.low[u] = timer++;
 
-    sccStack.push(u);
+    res.sccStack.push(u);
     res.onStack[u] = true;
 
     for (int v : adj[u]) {
         if (visited[v] == 0) {
-            directedDfs(adj, visited, res, v, sccStack, u);
+            directedDfs(adj, visited, res, v, u);
             res.low[u] = min(res.low[u], res.low[v]);
         } else if (res.onStack[v]) {
             res.low[u] = min(res.low[u], res.entry[v]);
@@ -115,9 +117,9 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
     if (res.low[u] == res.entry[u]) {
         // Root of SCC
         vector<int> components;
-        while (!sccStack.empty()) {
-            int v = sccStack.top();
-            sccStack.pop();
+        while (!res.sccStack.empty()) {
+            int v = res.sccStack.top();
+            res.sccStack.pop();
             res.onStack[v] = false;
             components.push_back(v);
             res.sccIndex[v] = currSCC;
@@ -145,8 +147,7 @@ DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
 
     res.onStack.assign(n, false);
     res.sccIndex.assign(n, -1);
-    stack<int> sccStack;
-    int currSCC = 0;
+    currSCC = 0;
 
     vector<int> visited(n, 0);
     timer = 0;
@@ -155,7 +156,7 @@ DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
     for (int u = 0; u < n; ++u) {
         if (!visited[u]) {
             if (isDirected) {
-                directedDfs(adj, visited, res, u, sccStack, currSCC, -1);
+                directedDfs(adj, visited, res, u, -1);
             } else {
                 undirectedDfs(adj, visited, res, u, -1);
             }
