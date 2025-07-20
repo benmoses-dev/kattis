@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <stack>
 #include <vector>
 
 using namespace std;
@@ -21,6 +22,8 @@ struct DFSResult {
     vector<int> articulationPoints; // Critical nodes in an undirected graph.
     vector<pair<int, int>> bridges; // Critical edges in an undirected graph.
     vector<vector<int>> sccs;       // Strongly-connected components in a directed graph.
+    vector<bool> onStack;           // Tarjan's SCC algorithm.
+    vector<int> sccIndex;           // Component ID for each node in Tarjan's.
 };
 
 void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res, int u,
@@ -40,7 +43,7 @@ void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &re
     bool isArticulation = false;
 
     for (int v : adj[u]) {
-        if (v == p) // Prevent infinite recursion.
+        if (v == p) // Don't go back up the edge.
             continue;
 
         if (visited[v] == 0) {
@@ -80,11 +83,11 @@ void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &re
 }
 
 void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res, int u,
-                 int p = -1) {
+                 stack<int> &sccStack, int &currSCC, int p = -1) {
     /**
      * 0 = not visited
      * 1 = visiting
-     * 2 = visited
+     * We can track cycles using the stack.
      */
     visited[u] = 1;
 
@@ -93,29 +96,38 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
 
     // Detect bridges and articulation points
     res.entry[u] = res.low[u] = timer++;
-    int children = 0;
+
+    sccStack.push(u);
+    res.onStack[u] = true;
 
     for (int v : adj[u]) {
-        if (v == p) // Prevent infinite recursion.
-            continue;
-
         if (visited[v] == 0) {
-            directedDfs(adj, visited, res, v, u);
+            directedDfs(adj, visited, res, v, sccStack, u);
             res.low[u] = min(res.low[u], res.low[v]);
-            children++;
-        } else {
+        } else if (res.onStack[v]) {
             res.low[u] = min(res.low[u], res.entry[v]);
-
-            if (visited[v] == 1 && v != p) {
-                // Back edge => cycle
-                res.hasCycle = true;
-            }
-
-            // If visited[v] == 2, it's a forward/cross edge
+            // Back edge => cycle
+            res.hasCycle = true;
         }
+        // It's a forward/cross edge
     }
 
-    visited[u] = 2; // Mark as finished
+    if (res.low[u] == res.entry[u]) {
+        // Root of SCC
+        vector<int> components;
+        while (!sccStack.empty()) {
+            int v = sccStack.top();
+            sccStack.pop();
+            res.onStack[v] = false;
+            components.push_back(v);
+            res.sccIndex[v] = currSCC;
+            if (v == u)
+                break;
+        }
+        res.sccs.push_back(components);
+        currSCC++;
+    }
+
     res.exit[u] = timer++;
     res.topoOrder.push_back(u);
 }
@@ -131,6 +143,11 @@ DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
     res.low.resize(n);
     res.hasCycle = false;
 
+    res.onStack.assign(n, false);
+    res.sccIndex.assign(n, -1);
+    stack<int> sccStack;
+    int currSCC = 0;
+
     vector<int> visited(n, 0);
     timer = 0;
     currentComponent = 0;
@@ -138,7 +155,7 @@ DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
     for (int u = 0; u < n; ++u) {
         if (!visited[u]) {
             if (isDirected) {
-                directedDfs(adj, visited, res, u, -1);
+                directedDfs(adj, visited, res, u, sccStack, currSCC, -1);
             } else {
                 undirectedDfs(adj, visited, res, u, -1);
             }
