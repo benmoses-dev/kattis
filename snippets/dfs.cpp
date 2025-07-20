@@ -13,19 +13,20 @@ int currSCC;
  * This allows us to solve multiple different types of graph/tree traversal problems.
  */
 struct DFSResult {
-    bool hasCycle;          // Detect cycles in undirected or directed graphs.
-    vector<int> parent;     // Used to recreate the path through the graph.
-    vector<int> components; // Used for connectivity checks.
-    vector<int> entry;      // Track the order of processing.
-    vector<int> exit;       // Used to track ancestors.
-    vector<int> topoOrder;  // Track post order and topological order of traversal.
-    vector<int> low;        // Used to find the critical components of a graph.
+    bool hasCycle;                  // Detect cycles in undirected or directed graphs.
+    vector<int> parent;             // Used to recreate the path through the graph.
+    vector<int> components;         // Used for connectivity checks.
+    vector<int> entry;              // Track the order of processing.
+    vector<int> exit;               // Used to track ancestors.
+    vector<int> low;                // Used to find the critical components of a graph.
+    vector<int> postOrder;          // Track post order of traversal.
     vector<int> articulationPoints; // Critical nodes in an undirected graph.
     vector<pair<int, int>> bridges; // Critical edges in an undirected graph.
     vector<vector<int>> sccs;       // Strongly-connected components in a directed graph.
     stack<int> sccStack;            // Track current component stack.
     vector<bool> onStack;           // Tarjan's SCC algorithm.
     vector<int> sccIndex;           // Component ID for each node in Tarjan's.
+    vector<int> topoOrder;          // Only useful in a DAG.
 };
 
 void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res, int u,
@@ -81,7 +82,7 @@ void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &re
     }
 
     res.exit[u] = timer++;
-    res.topoOrder.push_back(u);
+    res.postOrder.push_back(u);
 }
 
 void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res, int u,
@@ -131,7 +132,7 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
     }
 
     res.exit[u] = timer++;
-    res.topoOrder.push_back(u);
+    res.postOrder.push_back(u);
 }
 
 DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
@@ -164,7 +165,10 @@ DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
         }
     }
 
-    reverse(res.topoOrder.begin(), res.topoOrder.end());
+    if (isDirected && !res.hasCycle) {
+        res.topoOrder = res.postOrder;
+        reverse(res.topoOrder.begin(), res.topoOrder.end());
+    }
     return res;
 }
 
