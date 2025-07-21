@@ -4,10 +4,10 @@
 using namespace std;
 
 /**
- * Generic BFS algorithm for an undirected graph.
+ * Generic BFS algorithm.
  * Tracks whether the graph has cycles or is bipartite, components, and shortest paths.
  */
-bool undirectedBfs(vector<vector<int>> &adj) {
+bool bfs(vector<vector<int>> &adj) {
     int n = adj.size();
 
     // Track state
