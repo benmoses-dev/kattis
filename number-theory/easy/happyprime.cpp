@@ -17,16 +17,15 @@ vector<bool> sieve(long long N) {
     return isPrime;
 }
 
-vector<int> getDigits(long long n) {
-    long long temp = n;
-    vector<int> digits;
-    while (temp > 9) {
-        int r = temp % 10;
-        digits.push_back(r);
-        temp /= 10;
+long long getSum(long long n) {
+    long long sum = 0;
+    while (n > 0) {
+        int r = n % 10;
+        long long d = r * r;
+        sum += d;
+        n /= 10;
     }
-    digits.push_back(temp);
-    return digits;
+    return sum;
 }
 
 int main() {
@@ -48,21 +47,16 @@ int main() {
             continue;
         }
 
-        vector<int> digits = getDigits(m);
         set<long long> nums;
         bool isHappy = true;
-        long long sum = 0;
-        while (isHappy && sum != 1) {
-            sum = 0;
-            for (const int digit : digits) {
-                long long d = digit * digit;
-                sum += d;
-            }
+        long long sum = m;
+        while (sum != 1) {
             if (nums.count(sum) > 0) {
                 isHappy = false;
+                break;
             }
             nums.insert(sum);
-            digits = getDigits(sum);
+            sum = getSum(sum);
         }
 
         if (isHappy) {
