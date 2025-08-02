@@ -4,53 +4,6 @@
 
 using namespace std;
 
-int permutations(vector<int> options, int total) {
-    // Dynamic programming to find ways to sum to an increasing amount (i)
-    vector<long long> dp(total + 1, 0);
-    dp[0] = 1; // The empty set
-    for (int i = 1; i <= total; i++) {
-        /**
-         * If you can sum to x using y permutations, then you can sum to (x + option = i)
-         * by using y + 1 permutations - simply add the option. Repeat for every possible
-         * option.
-         */
-        for (const int option : options) {
-            if (option <= i) {
-                dp[i] += dp[i - option];
-            }
-        }
-    }
-    return dp[total];
-}
-
-int combinations(vector<int> options, int total) {
-    vector<long long> dp(total + 1, 0);
-    dp[0] = 1;
-    /**
-     * Fix the options to preserve order and prevent permutations.
-     */
-    for (const int option : options) {
-        for (int i = option; i <= total; i++) {
-            dp[i] += dp[i - option];
-        }
-    }
-    return dp[total];
-}
-
-/**
- * Use DP (Pascal's triangle) to pre compute binomial coefficients.
- */
-vector<vector<long long>> pascalsTriangle(int maxN, int maxR) {
-    vector<vector<long long>> dp(maxN + 1, vector<long long>(maxR + 1, 0));
-    for (int i = 0; i <= maxN; i++) {
-        dp[i][0] = 1;
-        for (int j = 1; j <= min(i, maxR); j++) {
-            dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j];
-        }
-    }
-    return dp;
-}
-
 /**
  * Build up a DP recurrence based on the fact that the current shortest supersequence
  * depends on whether we can merge the two latest characters or not, and on the length
