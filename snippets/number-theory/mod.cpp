@@ -56,7 +56,7 @@ void checkMod(long long m) {
 long long modInvEEA(long long b, long long m) {
     long long x, y; // Find x, y where (b * x) - (m * y) = gcd(b, m)
     long long gcd = extendedGCD(b, m, x, y);
-    return (x % m + m) % m; // Handle negative x
+    return normalise(x, m); // Handle negative x
 }
 
 /**
@@ -189,4 +189,53 @@ long long modCombination(long long n, long long r, long long m) {
     }
     return modDivide(numerator, denominator, m,
                      true); // If m prime, otherwise set false and ensure coprime
+}
+
+/**
+ * Calculate the value that results in the remainders a[i] when divided by m[i]
+ * for all i from 1 to the length of a and m.
+ * Ensure that all m are pairwise coprime, and ensure that a and m have the same length.
+ */
+pair<long long, long long> crt(const vector<long long> &a, const vector<long long> &m) {
+    size_t n = m.size();
+    if (n != a.size()) {
+        throw invalid_argument("Number of remainders and moduli do not match");
+    }
+    long long M = 1;
+    for (int i = 0; i < n; i++) {
+        checkMod(m[i]);
+        M *= m[i];
+    }
+    long long x = 0;
+    for (int i = 0; i < n; i++) {
+        long long Mi = M / m[i];
+        // Could potentially pre-compute modular inverses if there are many.
+        x += modMul(modMul(a[i], Mi, M), modInv(Mi, m[i]), M);
+    }
+    return {normalise(x, M), M};
+}
+
+/**
+ * Use when moduli are not coprime (otherwise use the function above).
+ */
+pair<long long, long long> generalisedCRT(const vector<long long> &a,
+                                          const vector<long long> &m) {
+    long long x = a[0];
+    long long lcm = m[0];
+    for (int i = 1; i < a.size(); i++) {
+        long long x1, y1;
+        long long g = extendedGCD(lcm, m[i], x1, y1);
+        if ((a[i] - x) % g != 0) {
+            throw invalid_argument("Congruences are incompatible");
+        }
+        long long mod = m[i] / g;
+        long long delta = ((a[i] - x) / g) % mod;
+        long long temp = (delta * x1) % mod;
+        if (temp < 0)
+            temp += mod;
+        x += lcm * temp;
+        lcm = (lcm / g) * m[i];
+        x = normalise(x, lcm);
+    }
+    return {x, lcm};
 }
