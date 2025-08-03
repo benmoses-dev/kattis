@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <climits>
 #include <queue>
 #include <tuple>
@@ -30,23 +29,16 @@ void dijkstra(vector<vector<pair<int, int>>> &adjacencyList, vector<int> &prev, 
             int currDist = distances[index];
             int newDist = d + weight;
             if (newDist < currDist) {
-                // Going to the neighbour through the current node is better
-                // than the current route
+                /**
+                 * Going to the neighbour through the current node is better
+                 * than the current route.
+                 */
                 distances[index] = newDist;
                 prev[index] = i;
                 pq.push({newDist, index});
             }
         }
     }
-}
-
-vector<int> reconstructPath(int end, const vector<int> &prev) {
-    vector<int> path;
-    for (int curr = end; curr != -1; curr = prev[curr]) {
-        path.push_back(curr);
-    }
-    reverse(path.begin(), path.end());
-    return path;
 }
 
 void gridDijkstra(vector<vector<int>> &grid, vector<vector<pair<int, int>>> &prev, int sr,
@@ -92,15 +84,4 @@ void gridDijkstra(vector<vector<int>> &grid, vector<vector<pair<int, int>>> &pre
             }
         }
     }
-}
-
-vector<pair<int, int>> reconstructGridPath(int endRow, int endCol,
-                                           const vector<vector<pair<int, int>>> &prev) {
-    vector<pair<int, int>> path;
-    for (pair<int, int> curr = {endRow, endCol}; curr.first != -1 && curr.second != -1;
-         curr = prev[curr.first][curr.second]) {
-        path.push_back({curr.first, curr.second});
-    }
-    reverse(path.begin(), path.end());
-    return path;
 }
