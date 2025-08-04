@@ -2,9 +2,12 @@
 #include <vector>
 
 using namespace std;
+using vi = vector<int>;
+using pii = pair<int, int>;
+using vpii = vector<pii>;
 
-vector<int> reconstructPath(int end, const vector<int> &prev) {
-    vector<int> path;
+vi reconstructPath(int end, const vi &prev) {
+    vi path;
     for (int curr = end; curr != -1; curr = prev[curr]) {
         path.push_back(curr);
     }
@@ -12,10 +15,9 @@ vector<int> reconstructPath(int end, const vector<int> &prev) {
     return path;
 }
 
-vector<pair<int, int>> reconstructGridPath(int endRow, int endCol,
-                                           const vector<vector<pair<int, int>>> &prev) {
-    vector<pair<int, int>> path;
-    for (pair<int, int> curr = {endRow, endCol}; curr.first != -1 && curr.second != -1;
+vpii reconstructGridPath(int endRow, int endCol, const vector<vpii> &prev) {
+    vpii path;
+    for (pii curr = {endRow, endCol}; curr.first != -1 && curr.second != -1;
          curr = prev[curr.first][curr.second]) {
         path.push_back({curr.first, curr.second});
     }

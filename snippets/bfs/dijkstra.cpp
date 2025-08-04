@@ -4,14 +4,19 @@
 #include <vector>
 
 using namespace std;
+using pii = pair<int, int>;
+using vpii = vector<pii>;
+using vvpii = vector<vpii>;
+using vi = vector<int>;
+using vvi = vector<vi>;
+using tiii = tuple<int, int, int>;
 
-void dijkstra(vector<vector<pair<int, int>>> &adjacencyList, vector<int> &prev, int start,
-              int n) {
+void dijkstra(vvpii &adjacencyList, vi &prev, int start, int n) {
     // Initialise distances
-    vector<int> distances(n, INT_MAX);
+    vi distances(n, INT_MAX);
 
     // Queue of pair<distance, index> sorted by smallest distance
-    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+    priority_queue<pii, vpii, greater<pii>> pq;
     pq.push({0, start});
 
     distances[start] = 0;
@@ -41,24 +46,20 @@ void dijkstra(vector<vector<pair<int, int>>> &adjacencyList, vector<int> &prev, 
     }
 }
 
-void gridDijkstra(vector<vector<int>> &grid, vector<vector<pair<int, int>>> &prev, int sr,
-                  int sc) {
+void gridDijkstra(vvi &grid, vvpii &prev, int sr, int sc) {
     int r = grid.size();
     int c = grid[0].size();
-    prev.resize(r, vector<pair<int, int>>(c));
+    prev.resize(r, vpii(c));
 
     int dr[] = {-1, 1, 0, 0};
     int dc[] = {0, 0, -1, 1};
 
-    vector<vector<int>> distances(
-        r, vector<int>(c, INT_MAX)); // Set all nodes to (effective) infinity
+    vvi distances(r, vi(c, INT_MAX)); // Set all nodes to (effective) infinity
     distances[sr][sc] = 0;
     prev[sr][sc] = {-1, -1};
 
     // Distance, Row, Column
-    priority_queue<tuple<int, int, int>, vector<tuple<int, int, int>>,
-                   greater<tuple<int, int, int>>>
-        pq;
+    priority_queue<tiii, vector<tiii>, greater<tiii>> pq;
     pq.push({0, sr, sc});
 
     while (!pq.empty()) {

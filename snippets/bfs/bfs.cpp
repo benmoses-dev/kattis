@@ -2,24 +2,29 @@
 #include <vector>
 
 using namespace std;
+using vi = vector<int>;
+using vvi = vector<vi>;
+using pii = pair<int, int>;
+using vpii = vector<pii>;
+using vvpii = vector<vpii>;
 
 /**
  * Generic BFS algorithm.
  * Tracks whether the graph has cycles or is bipartite, components, and shortest paths.
  */
-bool adjBFS(const vector<vector<int>> &adj) {
+bool adjBFS(const vvi &adj) {
     int n = adj.size();
 
     // Track state
     bool hasCycle = false;
     bool isBipartite = true;
-    vector<int> prev(n, -1);
-    vector<int> colours(n, -1);
-    vector<int> distances(n, -1);
+    vi prev(n, -1);
+    vi colours(n, -1);
+    vi distances(n, -1);
 
     // Assign component IDs
     int componentId = 0;
-    vector<int> components(n, -1);
+    vi components(n, -1);
 
     /**
      * Remove the loop and pass in an index to only carry out a BFS from one starting node
@@ -70,19 +75,19 @@ bool adjBFS(const vector<vector<int>> &adj) {
 /**
  * BFS on a grid. No need to track cycles.
  */
-vector<vector<pair<int, int>>> gridBFS(const vector<vector<int>> &grid) {
+vvpii gridBFS(const vvi &grid) {
     int r = grid.size();
     int c = grid[0].size();
 
-    vector<vector<pair<int, int>>> prev(r, vector<pair<int, int>>(c));
+    vvpii prev(r, vpii(c));
 
     // Track state
-    vector<vector<int>> colours(r, vector<int>(c, -1));
-    vector<vector<int>> distances(r, vector<int>(c, -1));
+    vvi colours(r, vi(c, -1));
+    vvi distances(r, vi(c, -1));
 
     // Assign component IDs
     int componentId = 0;
-    vector<vector<int>> components(r, vector<int>(c, -1));
+    vvi components(r, vi(c, -1));
 
     /**
      * Remove the loop and pass in an index to only carry out a BFS from one starting node

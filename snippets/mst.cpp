@@ -4,6 +4,7 @@
 #include <vector>
 
 using namespace std;
+using vi = vector<int>;
 
 struct Edge {
     int u, v, w;
@@ -12,8 +13,8 @@ struct Edge {
 };
 
 struct DSU {
-    vector<int> parents;
-    vector<int> size;
+    vi parents;
+    vi size;
     int numComponents;
 
     DSU(const int n) {

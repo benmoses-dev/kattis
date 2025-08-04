@@ -1,12 +1,15 @@
 #include <vector>
 
 using namespace std;
+using ll = long long;
+using vll = vector<ll>;
+using vvll = vector<vll>;
 
 /**
  * Use DP (Pascal's triangle) to pre compute binomial coefficients.
  */
-vector<vector<long long>> pascalsTriangle(int maxN, int maxR) {
-    vector<vector<long long>> dp(maxN + 1, vector<long long>(maxR + 1, 0));
+vvll pascalsTriangle(int maxN, int maxR) {
+    vvll dp(maxN + 1, vll(maxR + 1, 0));
     for (int i = 0; i <= maxN; i++) {
         dp[i][0] = 1;
         for (int j = 1; j <= min(i, maxR); j++) {

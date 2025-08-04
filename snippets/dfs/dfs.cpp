@@ -3,6 +3,10 @@
 #include <vector>
 
 using namespace std;
+using vi = vector<int>;
+using vvi = vector<vi>;
+using pii = pair<int, int>;
+using vpii = vector<pii>;
 
 int timer;
 int currentComponent;
@@ -13,24 +17,23 @@ int currSCC;
  * This allows us to solve multiple different types of graph/tree traversal problems.
  */
 struct DFSResult {
-    bool hasCycle;                  // Detect cycles in undirected or directed graphs.
-    vector<int> parent;             // Used to recreate the path through the graph.
-    vector<int> components;         // Used for connectivity checks.
-    vector<int> entry;              // Track the order of processing.
-    vector<int> exit;               // Used to track ancestors.
-    vector<int> low;                // Used to find the critical components of a graph.
-    vector<int> postOrder;          // Track post order of traversal.
-    vector<int> articulationPoints; // Critical nodes in an undirected graph.
-    vector<pair<int, int>> bridges; // Critical edges in an undirected graph.
-    vector<vector<int>> sccs;       // Strongly-connected components in a directed graph.
-    stack<int> sccStack;            // Track current component stack.
-    vector<bool> onStack;           // Tarjan's SCC algorithm.
-    vector<int> sccIndex;           // Component ID for each node in Tarjan's.
-    vector<int> topoOrder;          // Only useful in a DAG.
+    bool hasCycle;         // Detect cycles in undirected or directed graphs.
+    vi parent;             // Used to recreate the path through the graph.
+    vi components;         // Used for connectivity checks.
+    vi entry;              // Track the order of processing.
+    vi exit;               // Used to track ancestors.
+    vi low;                // Used to find the critical components of a graph.
+    vi postOrder;          // Track post order of traversal.
+    vi articulationPoints; // Critical nodes in an undirected graph.
+    vpii bridges;          // Critical edges in an undirected graph.
+    vvi sccs;              // Strongly-connected components in a directed graph.
+    stack<int> sccStack;   // Track current component stack.
+    vector<bool> onStack;  // Tarjan's SCC algorithm.
+    vi sccIndex;           // Component ID for each node in Tarjan's.
+    vi topoOrder;          // Only useful in a DAG.
 };
 
-void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res, int u,
-                   int p = -1) {
+void undirectedDfs(vvi &adj, vi &visited, DFSResult &res, int u, int p = -1) {
     /**
      * 0 = not visited
      * 1 = visiting
@@ -98,8 +101,7 @@ void undirectedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &re
     res.postOrder.push_back(u);
 }
 
-void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res, int u,
-                 int p = -1) {
+void directedDfs(vvi &adj, vi &visited, DFSResult &res, int u, int p = -1) {
     /**
      * 0 = not visited
      * 1 = visiting
@@ -131,7 +133,7 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
 
     if (res.low[u] == res.entry[u]) {
         // Root of SCC - process all strongly connected components in this group.
-        vector<int> components;
+        vi components;
         while (!res.sccStack.empty()) {
             int v = res.sccStack.top();
             res.sccStack.pop();
@@ -152,7 +154,7 @@ void directedDfs(vector<vector<int>> &adj, vector<int> &visited, DFSResult &res,
 /**
  * DFS driver function. Pass isDirected depending on whether the graph is directed or not.
  */
-DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
+DFSResult runDFS(vvi &adj, bool isDirected = false) {
     int n = adj.size();
 
     DFSResult res;
@@ -167,7 +169,7 @@ DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
     res.sccIndex.assign(n, -1);
     currSCC = 0;
 
-    vector<int> visited(n, 0);
+    vi visited(n, 0);
     timer = 0;
     currentComponent = 0;
 
@@ -194,8 +196,8 @@ DFSResult runDFS(vector<vector<int>> &adj, bool isDirected = false) {
 /**
  * Re-construct the recursion path using the parent vector.
  */
-vector<int> getPath(int u, DFSResult &res) {
-    vector<int> path;
+vi getPath(int u, DFSResult &res) {
+    vi path;
     while (u != -1) {
         path.push_back(u);
         u = res.parent[u];

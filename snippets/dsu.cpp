@@ -2,15 +2,18 @@
 #include <vector>
 
 using namespace std;
+using ll = long long;
+using vi = vector<int>;
+using vll = vector<ll>;
 
 struct DSU {
-    vector<int> parents;
-    vector<int> size;
-    vector<int> maxVal;
-    vector<long long> sums;
+    vi parents;
+    vi size;
+    vi maxVal;
+    vll sums;
     int numComponents;
 
-    DSU(const vector<int> &values) {
+    DSU(const vi &values) {
         int n = values.size();
         parents.resize(n);
         iota(parents.begin(), parents.end(), 0);
@@ -50,7 +53,7 @@ struct DSU {
 
     int getMaxVal(int i) { return maxVal[find(i)]; }
 
-    long long getSum(int i) { return sums[find(i)]; }
+    ll getSum(int i) { return sums[find(i)]; }
 
     int getComponents() { return numComponents; }
 };

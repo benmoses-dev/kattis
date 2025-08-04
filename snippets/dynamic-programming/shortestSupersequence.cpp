@@ -3,6 +3,8 @@
 #include <vector>
 
 using namespace std;
+using vi = vector<int>;
+using vvi = vector<vi>;
 
 /**
  * Build up a DP recurrence based on the fact that the current shortest supersequence
@@ -13,7 +15,7 @@ string shortestSupersequence(string a, string b) {
     int m = a.size();
     int n = b.size();
 
-    vector<vector<int>> dp(m + 1, vector<int>(n + 1));
+    vvi dp(m + 1, vi(n + 1));
 
     // The first i characters (0-indexed) compared with the empty string (base cases).
     for (int i = 0; i <= m; i++)

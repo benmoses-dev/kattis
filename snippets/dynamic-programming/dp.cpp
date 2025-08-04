@@ -1,10 +1,13 @@
 #include <vector>
 
 using namespace std;
+using vi = vector<int>;
+using ll = long long;
+using vll = vector<ll>;
 
-int permutations(vector<int> options, int total) {
+int permutations(vi options, int total) {
     // Dynamic programming to find ways to sum to an increasing amount (i)
-    vector<long long> dp(total + 1, 0);
+    vll dp(total + 1, 0);
     dp[0] = 1; // The empty set
     for (int i = 1; i <= total; i++) {
         /**
@@ -21,8 +24,8 @@ int permutations(vector<int> options, int total) {
     return dp[total];
 }
 
-int combinations(vector<int> options, int total) {
-    vector<long long> dp(total + 1, 0);
+int combinations(vi options, int total) {
+    vll dp(total + 1, 0);
     dp[0] = 1;
     /**
      * Fix the options to preserve order and prevent permutations.

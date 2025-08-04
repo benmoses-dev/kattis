@@ -1,3 +1,5 @@
+using ui = unsigned int;
+
 constexpr bool isPowerOfTwo(int x) { return x > 0 && (x & (x - 1)) == 0; }
 
 constexpr int countSetBits(int x) {
@@ -9,7 +11,7 @@ constexpr int countSetBits(int x) {
     return count;
 }
 
-constexpr unsigned int lowestBit(unsigned int x) { return x & (-x); }
+constexpr ui lowestBit(ui x) { return x & (-x); }
 
 constexpr bool bitIsSet(int x, int k) { return (x & (1 << k)) != 0; }
 
