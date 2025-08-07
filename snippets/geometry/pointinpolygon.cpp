@@ -89,7 +89,7 @@ bool rcpip(const vpii &poly, pii p) {
  * below.
  * Assumes vertices are given in CCW winding order.
  */
-bool wnpip(const vpdd &poly, pdd p) {
+bool wnpip(const vpdd &poly, pdd p, bool ccw) {
     int wn = 0;
     int n = poly.size();
     for (int i = 0; i < n; ++i) {
@@ -100,15 +100,16 @@ bool wnpip(const vpdd &poly, pdd p) {
         }
         bool aBelow = a.second <= p.second;
         bool bAbove = b.second > p.second;
-        bool leftTurn = cross(a, b, p) > EPSILON;
-        if (aBelow && bAbove && leftTurn) {
+        double c = cross(a, b, p);
+        bool leftTurn = c > EPSILON;
+        bool rightTurn = c < -EPSILON;
+        if (aBelow && bAbove && ((leftTurn && ccw) || (rightTurn && !ccw))) {
             wn++;
             continue;
         }
         bool aAbove = !aBelow;
         bool bBelow = !bAbove;
-        bool rightTurn = cross(a, b, p) < -EPSILON;
-        if (aAbove && bBelow && rightTurn) {
+        if (aAbove && bBelow && ((rightTurn && ccw) || (leftTurn && !ccw))) {
             wn--;
         }
     }
@@ -121,9 +122,8 @@ bool wnpip(const vpdd &poly, pdd p) {
  * Use this if inputs are integers.
  * Can be used on regular or irregular polygons.
  * Polygons do not need to be convex and they can include self-intersections.
- * Assumes vertices are given in CCW winding order.
  */
-bool iwnpip(const vpii &poly, pii p) {
+bool iwnpip(const vpii &poly, pii p, bool ccw) {
     int wn = 0;
     int n = poly.size();
     for (int i = 0; i < n; i++) {
@@ -136,14 +136,14 @@ bool iwnpip(const vpii &poly, pii p) {
         bool bAbove = b.second > p.second;
         ll c = cross(a, b, p);
         bool leftTurn = c > 0;
-        if (aBelow && bAbove && leftTurn) {
+        bool rightTurn = c < 0;
+        if (aBelow && bAbove && ((leftTurn && ccw) || (rightTurn && !ccw))) {
             wn++;
             continue;
         }
         bool aAbove = !aBelow;
         bool bBelow = !bAbove;
-        bool rightTurn = c < 0;
-        if (aAbove && bBelow && rightTurn) {
+        if (aAbove && bBelow && ((rightTurn && ccw) || (leftTurn && !ccw))) {
             wn--;
         }
     }
