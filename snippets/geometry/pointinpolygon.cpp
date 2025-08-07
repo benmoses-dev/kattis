@@ -13,6 +13,9 @@ const double EPSILON = 1e-9;
 
 bool approxEqual(double a, double b) { return fabs(a - b) < EPSILON; }
 
+/**
+ * This is signed positive if the point is counter clockwise relative to the two vertices.
+ */
 ll cross(pii a, pii b, pii c) {
     ll x1 = b.first - a.first;
     ll y1 = b.second - a.second;
@@ -29,43 +32,51 @@ double cross(pdd a, pdd b, pdd c) {
     return x1 * y2 - x2 * y1;
 }
 
+/**
+ * Check whether the point is colinear and then check whether it is actually within the
+ * bounds of the line.
+ */
 bool onSegment(pii a, pii b, pii p) {
-    return cross(a, b, p) == 0 && min(a.first, b.first) <= p.first &&
-           p.first <= max(a.first, b.first) && min(a.second, b.second) <= p.second &&
-           p.second <= max(a.second, b.second);
+    if (cross(a, b, p) != 0)
+        return false;
+    int minX = min(a.first, b.first);
+    int maxX = max(a.first, b.first);
+    int minY = min(a.second, b.second);
+    int maxY = max(a.second, b.second);
+    return minX <= p.first && p.first <= maxX && minY <= p.second && p.second <= maxY;
 }
 
 bool onSegment(pdd a, pdd b, pdd p) {
-    if (fabs(cross(a, b, p)) > EPSILON) {
+    if (fabs(cross(a, b, p)) > EPSILON)
         return false;
-    }
-    double minX = min(a.first, b.first);
-    double maxX = max(a.first, b.first);
-    double minY = min(a.second, b.second);
-    double maxY = max(a.second, b.second);
-    return p.first + EPSILON >= minX && p.first - EPSILON <= maxX &&
-           p.second + EPSILON >= minY && p.second - EPSILON <= maxY;
+    double dx1 = b.first - a.first;
+    double dy1 = b.second - a.second;
+    double dx2 = p.first - a.first;
+    double dy2 = p.second - a.second;
+    double dot = dx1 * dx2 + dy1 * dy2;
+    double sqlen = dx1 * dx1 + dy1 * dy1;
+    return dot >= -EPSILON && dot <= sqlen + EPSILON;
 }
 
 /**
- * Simplest method for non-self-intersecting arbitrary polygons given using integer
- * vertices.
+ * Simplest method for non-self-intersecting arbitrary polygons given integer vertices.
  */
 bool rcpip(const vpii &poly, pii p) {
     int n = poly.size();
     bool inside = false;
-
     for (int i = 0, j = n - 1; i < n; j = i++) {
         pii a = poly[j];
         pii b = poly[i];
-
         if (onSegment(a, b, p)) {
             return true;
         }
-
-        if ((a.second > p.second) != (b.second > p.second)) {
+        bool aboveA = a.second < p.second;
+        bool aboveB = b.second < p.second;
+        if (aboveA ^ aboveB) { // p is horizontal to ab
             ll orient = cross(a, b, p);
-            if ((b.second > a.second) == (orient > 0)) {
+            bool asc = a.second < b.second;
+            bool leftTurn = orient > 0;
+            if (asc == leftTurn) { // p is to the left of ab
                 inside = !inside;
             }
         }
@@ -81,26 +92,26 @@ bool rcpip(const vpii &poly, pii p) {
 bool wnpip(const vpdd &poly, pdd p) {
     int wn = 0;
     int n = poly.size();
-
     for (int i = 0; i < n; ++i) {
         pdd a = poly[i];
         pdd b = poly[(i + 1) % n];
-
         if (onSegment(a, b, p)) {
             return true;
         }
-
-        if (a.second <= p.second) {
-            if (b.second > p.second && cross(a, b, p) > EPSILON) { // < -EPSILON if CW.
-                wn++;
-            }
-        } else {
-            if (b.second <= p.second && cross(a, b, p) < -EPSILON) { // > EPSILON if CW.
-                wn--;
-            }
+        bool aBelow = a.second <= p.second;
+        bool bAbove = b.second > p.second;
+        bool leftTurn = cross(a, b, p) > EPSILON;
+        if (aBelow && bAbove && leftTurn) {
+            wn++;
+            continue;
+        }
+        bool aAbove = !aBelow;
+        bool bBelow = !bAbove;
+        bool rightTurn = cross(a, b, p) < -EPSILON;
+        if (aAbove && bBelow && rightTurn) {
+            wn--;
         }
     }
-
     return wn != 0;
 }
 
@@ -115,49 +126,50 @@ bool wnpip(const vpdd &poly, pdd p) {
 bool iwnpip(const vpii &poly, pii p) {
     int wn = 0;
     int n = poly.size();
-
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < n; i++) {
         pii a = poly[i];
         pii b = poly[(i + 1) % n];
-
-        if (onSegment(a, b, p))
+        if (onSegment(a, b, p)) {
             return true;
-
-        if (a.second <= p.second) {
-            if (b.second > p.second && cross(a, b, p) > 0) { // < 0 if CW.
-                wn++;
-            }
-        } else {
-            if (b.second <= p.second && cross(a, b, p) < 0) { // > 0 if CW.
-                wn--;
-            }
+        }
+        bool aBelow = a.second <= p.second;
+        bool bAbove = b.second > p.second;
+        ll c = cross(a, b, p);
+        bool leftTurn = c > 0;
+        if (aBelow && bAbove && leftTurn) {
+            wn++;
+            continue;
+        }
+        bool aAbove = !aBelow;
+        bool bBelow = !bAbove;
+        bool rightTurn = c < 0;
+        if (aAbove && bBelow && rightTurn) {
+            wn--;
         }
     }
-
     return wn != 0;
 }
 
 /**
  * Simple orientation check for a point in a convex polygon.
- * Use if given arbitrary vertices.
+ * Probably quicker than calculating the center even for regular polygons.
  * Assumes vertices are given in CCW winding order.
  */
 bool simplepicp(const vpii &poly, pii p) {
     int n = poly.size();
-
     for (int i = 0; i < n; ++i) {
         pii a = poly[i];
         pii b = poly[(i + 1) % n];
-
-        if (onSegment(a, b, p)) {
-            return true;
+        ll c = cross(a, b, p);
+        // Assuming CCW order. Flip conditionals if CW.
+        if (c < 0) {
+            return false;
         }
-
-        if (cross(a, b, p) < 0) {
-            return false; // Assuming CCW order. Change to > 0 if CW.
+        if (c > 0) {
+            continue;
         }
+        return onSegment(a, b, p);
     }
-
     return true;
 }
 
@@ -167,40 +179,37 @@ bool simplepicp(const vpii &poly, pii p) {
  */
 bool simplepicp(const vpdd &poly, pdd p) {
     int n = poly.size();
-
     for (int i = 0; i < n; ++i) {
         pdd a = poly[i];
         pdd b = poly[(i + 1) % n];
-
-        if (onSegment(a, b, p)) {
-            return true;
+        double c = cross(a, b, p);
+        // Flip conditionals if CW.
+        if (c < -EPSILON) {
+            return false;
         }
-
-        if (cross(a, b, p) < -EPSILON) {
-            return false; // Assuming CCW order. Change to > EPSILON if CW.
+        if (c > EPSILON) {
+            continue;
         }
+        return onSegment(a, b, p);
     }
-
     return true;
 }
 
 /**
- * Binary search version for point in convex polygon. Vertices must be in winding order.
+ * Binary search version for point in convex polygon.
+ * Vertices must be in winding order.
  * Assumes vertices are given in CCW winding order.
+ * Really only necessary for large n.
  */
 bool binarypicp(const vpii &poly, pii p) {
     int n = poly.size();
     pii p0 = poly[0];
-
     if (cross(p0, poly[1], p) < 0) { // > 0 if CW.
         return false;
     }
-
     if (cross(p0, poly[n - 1], p) > 0) { // < 0 if CW.
         return false;
     }
-
-    // Binary search between vertices 1 and n-1
     int low = 1;
     int high = n - 1;
     while (high - low > 1) {
@@ -211,17 +220,9 @@ bool binarypicp(const vpii &poly, pii p) {
             high = mid;
         }
     }
-
-    // Check if point lies inside triangle (p0, poly[low], poly[high])
     pii a = poly[low];
     pii b = poly[high];
-
-    // Handle edge cases for point on edge
-    if (onSegment(a, b, p) || onSegment(p0, a, p) || onSegment(p0, b, p)) {
-        return true;
-    }
-
-    return cross(a, b, p) >= 0; // Use <= if vertices are in CW order.
+    return cross(a, b, p) >= 0;
 }
 
 /**
@@ -231,15 +232,12 @@ bool binarypicp(const vpii &poly, pii p) {
 bool binarypicp(const vpdd &poly, pdd p) {
     int n = poly.size();
     pdd p0 = poly[0];
-
     if (cross(p0, poly[1], p) < -EPSILON) { // Use > EPSILON if CW.
         return false;
     }
-
     if (cross(p0, poly[n - 1], p) > EPSILON) { // Use < -EPSILON if CW.
         return false;
     }
-
     int low = 1;
     int high = n - 1;
     while (high - low > 1) {
@@ -250,14 +248,8 @@ bool binarypicp(const vpdd &poly, pdd p) {
             high = mid;
         }
     }
-
     pdd a = poly[low];
     pdd b = poly[high];
-
-    if (onSegment(a, b, p) || onSegment(p0, a, p) || onSegment(p0, b, p)) {
-        return true;
-    }
-
     return cross(a, b, p) > -EPSILON; // Use < EPSILON if vertices are in CW order.
 }
 
@@ -267,23 +259,17 @@ bool binarypicp(const vpdd &poly, pdd p) {
  * checks).
  * Need the center point as well as the vertices.
  */
-bool pirhexagon(double px, double py, double cx, double cy, double s) {
-    // Translate to hexagon-centered coordinates
-    double x = px - cx;
-    double y = py - cy;
-
-    // Hexagon bounding logic (flat-topped)
+bool pirhexagon(pdd p, pdd c, double s) {
+    double x = p.first - c.first;
+    double y = p.second - c.second;
     double sqrt3 = sqrt(3.0);
-
+    // Quick bounding box
     if (abs(x) > s) {
         return false;
     }
     if (abs(y) > sqrt3 * s / 2.0) {
         return false;
     }
-    if (sqrt3 * abs(x) + abs(y) > sqrt3 * s) {
-        return false;
-    }
-
-    return true;
+    // Slope check (abs(y) = -sqrt(3) * abs(x) + sqrt(3) * s)
+    return (sqrt3 * abs(x) + abs(y) <= sqrt3 * s);
 }
